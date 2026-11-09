@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Мой бюджет · Виктория Лаврова</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#f7f3ec;--card:#fff;--text:#1f1b17;--muted:#8a7f74;--line:#ece3d4;--gold:#a67c3d;--gold2:#d9b77e;--inc:#4f8a3d;--exp:#c0563f;--sav:#a67c3d;--chip:#f1e8d9}
+@media (prefers-color-scheme:dark){:root:not(.light){--bg:#141210;--card:#1e1b18;--text:#f3ede4;--muted:#9c9186;--line:#2e2a25;--chip:#2a2621}}
+:root.dark{--bg:#141210;--card:#1e1b18;--text:#f3ede4;--muted:#9c9186;--line:#2e2a25;--chip:#2a2621}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:84px}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.hdr h1{font-size:20px;margin:0}
+.hdr small{color:var(--gold);font-weight:600;letter-spacing:.04em}
+.month{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;padding:6px;border:1px solid var(--line)}
+.month button{border:0;background:var(--chip);color:var(--text);width:34px;height:34px;border-radius:10px;font-size:18px}
+.month span{min-width:118px;text-align:center;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.card{background:var(--card);border-radius:16px;padding:12px 14px;border:1px solid var(--line)}
+.card .l{color:var(--muted);font-size:12.5px}
+.card .v{font-size:21px;font-weight:700;margin-top:2px;white-space:nowrap}
+.big{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+.big .v{font-size:26px}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--gold)}
+h2{font-size:16px;margin:20px 0 8px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row .n{flex:1;min-width:0}
+.row .n div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .n small{color:var(--muted)}
+.row .s{font-weight:600;white-space:nowrap}
+.cb{height:4px;border-radius:3px;background:var(--gold2);margin-top:4px}
+.del{border:0;background:none;color:var(--muted);font-size:18px;padding:0 4px}
+.empty{color:var(--muted);text-align:center;padding:16px 0}
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);font-size:12px;padding:4px 0}
+.tabs button b{display:block;font-size:20px}
+.tabs button.on{color:var(--gold)}
+.fab{display:flex;gap:10px;margin:6px 0 4px}
+.fab button{flex:1;border:0;border-radius:14px;padding:13px;font-weight:700;font-size:15px;color:#fff}
+.b-inc{background:var(--inc)}.b-exp{background:var(--exp)}.b-sav{background:var(--sav)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;z-index:9}
+.sheet.on{display:flex}
+.sh{background:var(--card);width:100%;max-width:560px;margin:0 auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.sh h3{margin:0 0 10px}
+.seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:none;padding:8px;border-radius:9px;color:var(--text);font-weight:600}
+.seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.amt{width:100%;font-size:30px;font-weight:700;border:0;border-bottom:2px solid var(--gold);background:none;color:var(--text);padding:6px 0;outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+.chips button{border:1px solid var(--line);background:var(--chip);color:var(--text);border-radius:20px;padding:7px 12px;font-size:13.5px}
+.chips button.on{background:var(--gold);color:#fff;border-color:var(--gold)}
+.inp{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:12px;padding:11px;font-size:15px;margin-bottom:10px}
+.ok{width:100%;border:0;border-radius:14px;padding:14px;background:var(--gold);color:#fff;font-weight:700;font-size:16px}
+.cancel{width:100%;border:0;background:none;color:var(--muted);padding:12px;font-size:15px}
+svg text{fill:var(--muted);font-size:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.note{color:var(--muted);font-size:12px;margin-top:18px;text-align:center}
+.page{display:none}.page.on{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><div><small>ВИКТОРИЯ ЛАВРОВА</small><h1>Мой бюджет</h1></div>
+    <div class="month"><button id="prev">‹</button><span id="mname"></span><button id="next">›</button></div></div>
+
+  <!-- ОБЗОР -->
+  <div class="page on" id="p-main">
+    <div class="grid">
+      <div class="card"><div class="l">Доход</div><div class="v" id="k-inc" style="color:var(--inc)"></div></div>
+      <div class="card"><div class="l">Расход</div><div class="v" id="k-exp" style="color:var(--exp)"></div></div>
+      <div class="card"><div class="l">Отложено</div><div class="v" id="k-sav" style="color:var(--sav)"></div></div>
+      <div class="card"><div class="l">Доля сбережений</div><div class="v" id="k-share"></div><div class="bar"><i id="k-sharebar"></i></div></div>
+      <div class="card big"><div><div class="l">Остаток на месяц</div><div class="v" id="k-rest"></div></div><div style="font-size:30px" id="k-emoji"></div></div>
+    </div>
+    <div class="fab"><button class="b-inc" data-add="inc">+ Доход</button><button class="b-exp" data-add="exp">− Расход</button><button class="b-sav" data-add="sav">↓ Отложить</button></div>
+    <h2>Расходы по категориям</h2>
+    <div class="card" id="cats"></div>
+    <h2>Операции за месяц</h2>
+    <div class="card" id="ops"></div>
+  </div>
+
+  <!-- ГРАФИКИ -->
+  <div class="page" id="p-charts">
+    <h2>Доходы и расходы за год</h2>
+    <div class="card"><svg id="barc" viewBox="0 0 340 180" width="100%"></svg>
+      <div class="legend"><span><i style="background:var(--inc)"></i>Доходы</span><span><i style="background:var(--exp)"></i>Расходы</span></div></div>
+    <h2>Куда уходят деньги за год</h2>
+    <div class="card"><svg id="pie" viewBox="0 0 200 200" width="60%" style="display:block;margin:0 auto"></svg><div class="legend" id="pieleg"></div></div>
+    <h2>Итоги года</h2>
+    <div class="card" id="year"></div>
+  </div>
+
+  <!-- ЦЕЛИ -->
+  <div class="page" id="p-goals">
+    <h2>Подушка безопасности</h2>
+    <div class="card">
+      <div class="row"><div class="n">Средние расходы в месяц</div><div class="s" id="c-avg"></div></div>
+      <div class="row"><div class="n">Нужно на <select id="c-months" class="inp" style="width:auto;display:inline;margin:0;padding:4px 6px">
+        <option>3</option><option selected>6</option><option>9</option><option>12</option></select> мес.</div><div class="s" id="c-target"></div></div>
+      <div class="row"><div class="n">Накоплено</div><div class="s" id="c-have"></div></div>
+      <div class="bar" style="height:10px"><i id="c-bar"></i></div>
+      <div style="color:var(--muted);font-size:12.5px;margin-top:6px" id="c-left"></div>
+    </div>
+    <h2>Мои цели</h2>
+    <div class="card" id="goals"></div>
+    <button class="ok" id="addgoal" style="margin-top:12px">+ Новая цель</button>
+  </div>
+  <div class="note">Данные хранятся в вашем Telegram и видны только вам.<br>Не является финансовой консультацией · Виктория Лаврова — AI-персонаж</div>
+</div>
+
+<div class="tabs"><button class="on" data-p="main"><b>🏠</b>Обзор</button><button data-p="charts"><b>📊</b>Графики</button><button data-p="goals"><b>🎯</b>Цели</button></div>
+
+<!-- лист добавления -->
+<div class="sheet" id="sheet"><div class="sh">
+  <div class="seg" id="seg"><button data-t="inc">Доход</button><button data-t="exp">Расход</button><button data-t="sav">Отложить</button></div>
+  <input class="amt" id="amt" inputmode="decimal" placeholder="0 ₽">
+  <div class="chips" id="chips"></div>
+  <input class="inp" id="note" placeholder="Комментарий (необязательно)">
+  <input class="inp" id="date" type="date">
+  <button class="ok" id="save">Сохранить</button><button class="cancel" id="close">Отмена</button>
+</div></div>
+
+<div class="sheet" id="gsheet"><div class="sh">
+  <h3>Новая цель</h3>
+  <input class="inp" id="g-name" placeholder="Например: первый взнос за квартиру">
+  <input class="inp" id="g-sum" inputmode="numeric" placeholder="Сумма цели, ₽">
+  <input class="inp" id="g-have" inputmode="numeric" placeholder="Уже накоплено, ₽">
+  <input class="inp" id="g-date" type="date">
+  <button class="ok" id="g-save">Добавить</button><button class="cancel" id="g-close">Отмена</button>
+</div></div>
+
+<div class="sheet" id="psheet"><div class="sh">
+  <h3 id="p-title">Пополнить цель</h3>
+  <input class="amt" id="p-amt" inputmode="numeric" placeholder="0 ₽" style="margin-bottom:14px">
+  <button class="ok" id="p-save">Добавить</button><button class="cancel" id="p-close">Отмена</button>
+</div></div>
+<script>
+const tg = window.Telegram && Telegram.WebApp; if (tg) { tg.ready(); tg.expand(); if (tg.colorScheme) document.documentElement.classList.add(tg.colorScheme === 'dark' ? 'dark' : 'light'); }
+const CATS = {
+  inc: ["Зарплата","Подработка","Подарки и прочее"],
+  exp: ["Жильё","Коммунальные и связь","Продукты","Кафе и доставка","Транспорт","Здоровье и красота","Одежда","Развлечения и подписки","Подарки","Образование","Крупные покупки","Прочее"],
+  sav: ["Подушка безопасности","Цели и накопления"]
+};
+const COLORS = ["#a67c3d","#c0563f","#4f8a3d","#3d6f8a","#8a5aa6","#d9b77e","#c98a4b","#6aa69a","#b5718f","#7d8a3d","#5a5aa6","#999"];
+const MN = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const rub = n => (Math.round(n)).toLocaleString('ru-RU') + ' ₽';
+const haptic = t => { try { tg && tg.HapticFeedback.impactOccurred(t || 'light'); } catch(e){} };
+
+// ---------- хранилище: Telegram CloudStorage, иначе localStorage ----------
+const CS = tg && tg.CloudStorage && tg.initData ? tg.CloudStorage : null;
+const store = {
+  get: keys => new Promise(res => {
+    if (CS) CS.getItems(keys, (e, v) => res(e ? {} : v || {}));
+    else { const o = {}; keys.forEach(k => { try { o[k] = localStorage.getItem(k) || ''; } catch(e){ o[k]=''; } }); res(o); }
+  }),
+  set: (k, v) => new Promise(res => {
+    if (CS) CS.setItem(k, v, () => res());
+    else { try { localStorage.setItem(k, v); } catch(e){} res(); }
+  })
+};
+const now = new Date(); let Y = now.getFullYear(), M = now.getMonth();
+const key = (y, m) => `b_${y}_${String(m + 1).padStart(2, '0')}`;
+let cache = {}; // key -> [[t,catIdx,amount,day,note]]
+let settings = { months: 6, start: 0 }; let goals = [];
+
+async function loadYear(y) {
+  const keys = MN.map((_, m) => key(y, m));
+  const v = await store.get(keys.concat(['settings', 'goals']));
+  keys.forEach(k => { try { cache[k] = v[k] ? JSON.parse(v[k]) : []; } catch(e){ cache[k] = []; } });
+  try { if (v.settings) settings = JSON.parse(v.settings); } catch(e){}
+  try { if (v.goals) goals = JSON.parse(v.goals); } catch(e){}
+}
+const T = { inc: 0, exp: 1, sav: 2 }, TN = ['inc', 'exp', 'sav'];
+function sums(y, m) {
+  const r = { inc: 0, exp: 0, sav: 0, byCat: {} };
+  (cache[key(y, m)] || []).forEach(([t, c, a]) => { const tn = TN[t]; r[tn] += a; if (tn === 'exp') r.byCat[c] = (r.byCat[c] || 0) + a; });
+  return r;
+}
+
+function render() {
+  document.getElementById('mname').textContent = `${MN[M]} ${Y}`;
+  const s = sums(Y, M), rest = s.inc - s.exp - s.sav, share = s.inc ? s.sav / s.inc : 0;
+  const set = (id, v) => document.getElementById(id).textContent = v;
+  set('k-inc', rub(s.inc)); set('k-exp', rub(s.exp)); set('k-sav', rub(s.sav)); set('k-rest', rub(rest));
+  set('k-share', Math.round(share * 100) + '%'); document.getElementById('k-sharebar').style.width = Math.min(100, share * 100) + '%';
+  document.getElementById('k-rest').style.color = rest < 0 ? 'var(--exp)' : 'var(--text)';
+  set('k-emoji', !s.inc && !s.exp ? '✨' : rest < 0 ? '⚠️' : share >= .1 ? '🥂' : '👌');
+  // категории
+  const cats = Object.entries(s.byCat).sort((a, b) => b[1] - a[1]);
+  document.getElementById('cats').innerHTML = cats.length ? cats.map(([c, a]) =>
+    `<div class="row"><div class="n"><div>${CATS.exp[c]}</div><div class="cb" style="width:${Math.max(4, a / cats[0][1] * 100)}%"></div></div><div class="s">${rub(a)}</div><small style="color:var(--muted);width:38px;text-align:right">${Math.round(a / s.exp * 100)}%</small></div>`).join('')
+    : '<div class="empty">Пока нет расходов. Нажмите «− Расход».</div>';
+  // операции
+  const list = (cache[key(Y, M)] || []).map((o, i) => [o, i]).sort((a, b) => b[0][3] - a[0][3]);
+  document.getElementById('ops').innerHTML = list.length ? list.map(([[t, c, a, d, n], i]) => {
+    const tn = TN[t], col = tn === 'inc' ? 'var(--inc)' : tn === 'exp' ? 'var(--exp)' : 'var(--sav)', sign = tn === 'inc' ? '+' : '−';
+    return `<div class="row"><div class="n"><div>${CATS[tn][c] || ''}</div><small>${d} ${MN[M].toLowerCase().slice(0, 3)}${n ? ' · ' + esc(n) : ''}</small></div><div class="s" style="color:${col}">${sign}${rub(a)}</div><button class="del" data-del="${i}">×</button></div>`;
+  }).join('') : '<div class="empty">Здесь появятся ваши доходы и расходы</div>';
+  renderCharts(); renderGoals();
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function renderCharts() {
+  const ms = MN.map((_, m) => sums(Y, m)), max = Math.max(1, ...ms.map(x => Math.max(x.inc, x.exp)));
+  let svg = '', W = 340, H = 150, bw = 10;
+  for (let g = 0; g <= 4; g++) { const yy = 10 + (H - 10) * g / 4; svg += `<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="currentColor" opacity=".08"/>`; }
+  ms.forEach((x, m) => {
+    const cx = 8 + m * 27.5, hi = (H - 10) * x.inc / max, he = (H - 10) * x.exp / max;
+    svg += `<rect x="${cx}" y="${H - hi}" width="${bw}" height="${hi}" rx="2" fill="var(--inc)"/><rect x="${cx + bw + 1}" y="${H - he}" width="${bw}" height="${he}" rx="2" fill="var(--exp)"/>`;
+    svg += `<text x="${cx + bw}" y="${H + 16}" text-anchor="middle" ${m === M ? 'style="fill:var(--gold);font-weight:700"' : ''}>${MN[m].slice(0, 3).toLowerCase()}</text>`;
+  });
+  document.getElementById('barc').innerHTML = svg;
+  // pie
+  const tot = {}; ms.forEach(x => Object.entries(x.byCat).forEach(([c, a]) => tot[c] = (tot[c] || 0) + a));
+  const ent = Object.entries(tot).sort((a, b) => b[1] - a[1]), sum = ent.reduce((a, b) => a + b[1], 0);
+  let ang = -Math.PI / 2, p = '';
+  if (!sum) p = '<circle cx="100" cy="100" r="70" fill="none" stroke="var(--line)" stroke-width="28"/>';
+  ent.forEach(([c, a], i) => {
+    const fr = a / sum, a2 = ang + fr * 2 * Math.PI, large = fr > .5 ? 1 : 0;
+    const P = (t, r) => `${100 + r * Math.cos(t)} ${100 + r * Math.sin(t)}`;
+    p += fr >= .999 ? `<circle cx="100" cy="100" r="70" fill="none" stroke="${COLORS[c % 12]}" stroke-width="28"/>`
+      : `<path d="M ${P(ang, 84)} A 84 84 0 ${large} 1 ${P(a2, 84)} L ${P(a2, 56)} A 56 56 0 ${large} 0 ${P(ang, 56)} Z" fill="${COLORS[c % 12]}"/>`;
+    ang = a2;
+  });
+  p += `<text x="100" y="96" text-anchor="middle" style="font-size:11px">за год</text><text x="100" y="114" text-anchor="middle" style="font-size:15px;font-weight:700;fill:var(--text)">${rub(sum)}</text>`;
+  document.getElementById('pie').innerHTML = p;
+  document.getElementById('pieleg').innerHTML = ent.map(([c, a]) => `<span><i style="background:${COLORS[c % 12]}"></i>${CATS.exp[c]} ${Math.round(a / sum * 100)}%</span>`).join('');
+  const yi = ms.reduce((a, x) => a + x.inc, 0), ye = ms.reduce((a, x) => a + x.exp, 0), ys = ms.reduce((a, x) => a + x.sav, 0);
+  document.getElementById('year').innerHTML = [['Доходы', yi, 'var(--inc)'], ['Расходы', ye, 'var(--exp)'], ['Отложено', ys, 'var(--sav)'], ['Остаток', yi - ye - ys, 'var(--text)']]
+    .map(([l, v, c]) => `<div class="row"><div class="n">${l}</div><div class="s" style="color:${c}">${rub(v)}</div></div>`).join('');
+}
+
+function renderGoals() {
+  const ms = MN.map((_, m) => sums(Y, m)).filter(x => x.exp > 0);
+  const avg = ms.length ? ms.reduce((a, x) => a + x.exp, 0) / ms.length : 0;
+  let cushion = settings.start || 0; MN.forEach((_, m) => (cache[key(Y, m)] || []).forEach(([t, c, a]) => { if (t === 2 && c === 0) cushion += a; }));
+  const target = avg * settings.months;
+  document.getElementById('c-months').value = String(settings.months);
+  document.getElementById('c-avg').textContent = rub(avg);
+  document.getElementById('c-target').textContent = rub(target);
+  document.getElementById('c-have').textContent = rub(cushion);
+  const pr = target ? Math.min(1, cushion / target) : 0;
+  document.getElementById('c-bar').style.width = pr * 100 + '%';
+  document.getElementById('c-left').textContent = target ? `${Math.round(pr * 100)}% · осталось ${rub(Math.max(0, target - cushion))}` : 'Добавьте расходы — и здесь появится цель подушки.';
+  const today = new Date();
+  document.getElementById('goals').innerHTML = goals.length ? goals.map((g, i) => {
+    const left = Math.max(0, g.sum - g.have), d = g.date ? new Date(g.date) : null;
+    const months = d ? Math.max(1, (d.getFullYear() - today.getFullYear()) * 12 + d.getMonth() - today.getMonth()) : 0;
+    const pct = g.sum ? Math.min(100, g.have / g.sum * 100) : 0;
+    return `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><b>${esc(g.name)}</b><button class="del" data-gdel="${i}">×</button></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <small style="color:var(--muted)">${rub(g.have)} из ${rub(g.sum)}${months ? ` · откладывать <b style="color:var(--gold)">${rub(left / months)}</b> в месяц` : ''}</small>
+      <div style="margin-top:6px"><button class="chips-btn" data-gplus="${i}" style="border:0;background:var(--chip);color:var(--text);border-radius:10px;padding:6px 10px">+ Пополнить</button></div></div>`;
+  }).join('') : '<div class="empty">Добавьте цель — например, первый взнос за квартиру</div>';
+}
+
+// ---------- добавление ----------
+let addType = 'exp', addCat = 0;
+function openAdd(t) {
+  addType = t; addCat = 0; document.getElementById('amt').value = ''; document.getElementById('note').value = '';
+  const d = new Date(); const sameMonth = d.getFullYear() === Y && d.getMonth() === M;
+  document.getElementById('date').value = `${Y}-${String(M + 1).padStart(2, '0')}-${String(sameMonth ? d.getDate() : 1).padStart(2, '0')}`;
+  drawSheet(); document.getElementById('sheet').classList.add('on'); setTimeout(() => document.getElementById('amt').focus(), 150);
+}
+function drawSheet() {
+  document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.t === addType));
+  document.getElementById('chips').innerHTML = CATS[addType].map((c, i) => `<button data-c="${i}" class="${i === addCat ? 'on' : ''}">${c}</button>`).join('');
+}
+document.getElementById('seg').onclick = e => { if (e.target.dataset.t) { addType = e.target.dataset.t; addCat = 0; drawSheet(); haptic(); } };
+document.getElementById('chips').onclick = e => { if (e.target.dataset.c) { addCat = +e.target.dataset.c; drawSheet(); haptic(); } };
+document.getElementById('close').onclick = () => document.getElementById('sheet').classList.remove('on');
+document.getElementById('save').onclick = async () => {
+  const a = parseFloat(document.getElementById('amt').value.replace(/\s/g, '').replace(',', '.'));
+  if (!a || a <= 0) { tg ? tg.showAlert('Введите сумму') : alert('Введите сумму'); return; }
+  const dv = document.getElementById('date').value.split('-'); const y = +dv[0] || Y, m = (+dv[1] || M + 1) - 1, day = +dv[2] || 1;
+  const k = key(y, m); if (!cache[k]) cache[k] = [];
+  const n = document.getElementById('note').value.trim().slice(0, 40);
+  const op = [T[addType], addCat, Math.round(a)]; op.push(day); if (n) op.push(n);
+  cache[k].push(op);
+  const json = JSON.stringify(cache[k]);
+  if (json.length > 4000) { cache[k].pop(); tg && tg.showAlert('В этом месяце слишком много записей. Объедините мелкие расходы в одну запись.'); return; }
+  await store.set(k, json); haptic('medium');
+  document.getElementById('sheet').classList.remove('on');
+  if (y !== Y) { Y = y; await loadYear(Y); } M = m; render();
+};
+document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => openAdd(b.dataset.add));
+document.getElementById('ops').onclick = async e => {
+  const i = e.target.dataset.del; if (i === undefined) return;
+  const go = async () => { cache[key(Y, M)].splice(+i, 1); await store.set(key(Y, M), JSON.stringify(cache[key(Y, M)])); render(); };
+  tg ? tg.showConfirm('Удалить запись?', ok => ok && go()) : (confirm('Удалить запись?') && go());
+};
+
+// ---------- цели ----------
+document.getElementById('c-months').onchange = async e => { settings.months = +e.target.value; await store.set('settings', JSON.stringify(settings)); render(); };
+document.getElementById('addgoal').onclick = () => { ['g-name', 'g-sum', 'g-have', 'g-date'].forEach(id => document.getElementById(id).value = ''); document.getElementById('gsheet').classList.add('on'); };
+document.getElementById('g-close').onclick = () => document.getElementById('gsheet').classList.remove('on');
+document.getElementById('g-save').onclick = async () => {
+  const g = { name: document.getElementById('g-name').value.trim().slice(0, 40), sum: +document.getElementById('g-sum').value.replace(/\D/g, ''), have: +document.getElementById('g-have').value.replace(/\D/g, '') || 0, date: document.getElementById('g-date').value };
+  if (!g.name || !g.sum) { tg ? tg.showAlert('Укажите название и сумму цели') : alert('Укажите название и сумму'); return; }
+  goals.push(g); await store.set('goals', JSON.stringify(goals)); document.getElementById('gsheet').classList.remove('on'); haptic('medium'); render();
+};
+document.getElementById('goals').onclick = async e => {
+  if (e.target.dataset.gdel !== undefined) { const i = +e.target.dataset.gdel; const go = async () => { goals.splice(i, 1); await store.set('goals', JSON.stringify(goals)); render(); }; tg ? tg.showConfirm('Удалить цель?', ok => ok && go()) : go(); }
+  if (e.target.dataset.gplus !== undefined) {
+    plusIdx = +e.target.dataset.gplus; document.getElementById('p-title').textContent = 'Пополнить: ' + goals[plusIdx].name;
+    document.getElementById('p-amt').value = ''; document.getElementById('psheet').classList.add('on'); setTimeout(() => document.getElementById('p-amt').focus(), 150);
+  }
+};
+
+let plusIdx = -1;
+document.getElementById('p-close').onclick = () => document.getElementById('psheet').classList.remove('on');
+document.getElementById('p-save').onclick = async () => {
+  const n = +document.getElementById('p-amt').value.replace(/\D/g, '');
+  if (n && plusIdx >= 0) { goals[plusIdx].have += n; await store.set('goals', JSON.stringify(goals)); haptic('medium'); }
+  document.getElementById('psheet').classList.remove('on'); render();
+};
+// ---------- навигация ----------
+document.getElementById('prev').onclick = async () => { M--; if (M < 0) { M = 11; Y--; await loadYear(Y); } haptic(); render(); };
+document.getElementById('next').onclick = async () => { M++; if (M > 11) { M = 0; Y++; await loadYear(Y); } haptic(); render(); };
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.p)); haptic(); window.scrollTo(0, 0);
+});
+loadYear(Y).then(render);
+</script>
+</body>
+</html>
