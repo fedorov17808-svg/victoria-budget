@@ -81,7 +81,7 @@ svg text{fill:var(--muted);font-size:10px}
     <div class="fab"><button class="b-inc" data-add="inc">+ Доход</button><button class="b-exp" data-add="exp">− Расход</button><button class="b-sav" data-add="sav">↓ Отложить</button></div>
     <h2>Расходы по категориям</h2>
     <div class="card" id="cats"></div>
-    <h2>Операции за месяц</h2>
+    <h2>Операции за месяц <small style="font-weight:400;color:var(--muted);font-size:12px">· нажмите, чтобы изменить</small></h2>
     <div class="card" id="ops"></div>
   </div>
 
@@ -123,7 +123,7 @@ svg text{fill:var(--muted);font-size:10px}
   <div class="chips" id="chips"></div>
   <input class="inp" id="note" placeholder="Комментарий (необязательно)">
   <input class="inp" id="date" type="date">
-  <button class="ok" id="save">Сохранить</button><button class="cancel" id="close">Отмена</button>
+  <button class="ok" id="save">Сохранить</button><button class="cancel" id="delop" style="display:none;color:var(--exp)">Удалить запись</button><button class="cancel" id="close">Отмена</button>
 </div></div>
 
 <div class="sheet" id="gsheet"><div class="sh">
@@ -200,7 +200,7 @@ function render() {
   const list = (cache[key(Y, M)] || []).map((o, i) => [o, i]).sort((a, b) => b[0][3] - a[0][3]);
   document.getElementById('ops').innerHTML = list.length ? list.map(([[t, c, a, d, n], i]) => {
     const tn = TN[t], col = tn === 'inc' ? 'var(--inc)' : tn === 'exp' ? 'var(--exp)' : 'var(--sav)', sign = tn === 'inc' ? '+' : '−';
-    return `<div class="row"><div class="n"><div>${CATS[tn][c] || ''}</div><small>${d} ${MN[M].toLowerCase().slice(0, 3)}${n ? ' · ' + esc(n) : ''}</small></div><div class="s" style="color:${col}">${sign}${rub(a)}</div><button class="del" data-del="${i}">×</button></div>`;
+    return `<div class="row" data-row="${i}" style="cursor:pointer"><div class="n"><div>${CATS[tn][c] || ''}</div><small>${d} ${MN[M].toLowerCase().slice(0, 3)}${n ? ' · ' + esc(n) : ''}</small></div><div class="s" style="color:${col}">${sign}${rub(a)}</div><button class="del" data-del="${i}">×</button></div>`;
   }).join('') : '<div class="empty">Здесь появятся ваши доходы и расходы</div>';
   renderCharts(); renderGoals();
 }
@@ -261,12 +261,21 @@ function renderGoals() {
 }
 
 // ---------- добавление ----------
-let addType = 'exp', addCat = 0;
+let addType = 'exp', addCat = 0, editIdx = -1;
 function openAdd(t) {
+  editIdx = -1; document.getElementById('save').textContent = 'Сохранить'; document.getElementById('delop').style.display = 'none';
   addType = t; addCat = 0; document.getElementById('amt').value = ''; document.getElementById('note').value = '';
   const d = new Date(); const sameMonth = d.getFullYear() === Y && d.getMonth() === M;
   document.getElementById('date').value = `${Y}-${String(M + 1).padStart(2, '0')}-${String(sameMonth ? d.getDate() : 1).padStart(2, '0')}`;
   drawSheet(); document.getElementById('sheet').classList.add('on'); setTimeout(() => document.getElementById('amt').focus(), 150);
+}
+function openEdit(i) {
+  const [t, c, a, d, n] = cache[key(Y, M)][i];
+  editIdx = i; addType = TN[t]; addCat = c;
+  document.getElementById('amt').value = a; document.getElementById('note').value = n || '';
+  document.getElementById('date').value = `${Y}-${String(M + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  document.getElementById('save').textContent = 'Сохранить изменения'; document.getElementById('delop').style.display = 'block';
+  drawSheet(); document.getElementById('sheet').classList.add('on');
 }
 function drawSheet() {
   document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.t === addType));
@@ -274,11 +283,17 @@ function drawSheet() {
 }
 document.getElementById('seg').onclick = e => { if (e.target.dataset.t) { addType = e.target.dataset.t; addCat = 0; drawSheet(); haptic(); } };
 document.getElementById('chips').onclick = e => { if (e.target.dataset.c) { addCat = +e.target.dataset.c; drawSheet(); haptic(); } };
-document.getElementById('close').onclick = () => document.getElementById('sheet').classList.remove('on');
+document.getElementById('close').onclick = () => { editIdx = -1; document.getElementById('sheet').classList.remove('on'); };
+document.getElementById('delop').onclick = () => {
+  const i = editIdx; if (i < 0) return;
+  const go = async () => { cache[key(Y, M)].splice(i, 1); await store.set(key(Y, M), JSON.stringify(cache[key(Y, M)])); editIdx = -1; document.getElementById('sheet').classList.remove('on'); render(); };
+  tg ? tg.showConfirm('Удалить запись?', ok => ok && go()) : (confirm('Удалить запись?') && go());
+};
 document.getElementById('save').onclick = async () => {
   const a = parseFloat(document.getElementById('amt').value.replace(/\s/g, '').replace(',', '.'));
   if (!a || a <= 0) { tg ? tg.showAlert('Введите сумму') : alert('Введите сумму'); return; }
   const dv = document.getElementById('date').value.split('-'); const y = +dv[0] || Y, m = (+dv[1] || M + 1) - 1, day = +dv[2] || 1;
+  if (editIdx >= 0) { const ok = key(Y, M); cache[ok].splice(editIdx, 1); await store.set(ok, JSON.stringify(cache[ok])); editIdx = -1; }
   const k = key(y, m); if (!cache[k]) cache[k] = [];
   const n = document.getElementById('note').value.trim().slice(0, 40);
   const op = [T[addType], addCat, Math.round(a)]; op.push(day); if (n) op.push(n);
@@ -291,7 +306,8 @@ document.getElementById('save').onclick = async () => {
 };
 document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => openAdd(b.dataset.add));
 document.getElementById('ops').onclick = async e => {
-  const i = e.target.dataset.del; if (i === undefined) return;
+  const i = e.target.dataset.del;
+  if (i === undefined) { const r = e.target.closest('[data-row]'); if (r) { haptic(); openEdit(+r.dataset.row); } return; }
   const go = async () => { cache[key(Y, M)].splice(+i, 1); await store.set(key(Y, M), JSON.stringify(cache[key(Y, M)])); render(); };
   tg ? tg.showConfirm('Удалить запись?', ok => ok && go()) : (confirm('Удалить запись?') && go());
 };
